@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarketAI Suite | AI-Powered Sales & Marketing</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Marked.js for parsing Markdown from AI responses -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5',
+                        secondary: '#1e293b',
+                        accent: '#0ea5e9',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .prose h1 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #1e293b; }
+        .prose h2 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #334155; }
+        .prose p { margin-bottom: 1rem; line-height: 1.6; color: #475569; }
+        .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid #fff;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col md:flex-row">
+
+    <!-- Sidebar -->
+    <nav class="w-full md:w-64 bg-secondary text-white flex flex-col shadow-xl z-10 shrink-0 md:min-h-screen">
+        <div class="p-6 flex items-center space-x-3 border-b border-slate-700">
+            <i data-lucide="zap" class="text-accent w-8 h-8"></i>
+            <h1 class="text-xl font-bold tracking-tight">MarketAI<span class="text-accent">Suite</span></h1>
+        </div>
+        
+        <div class="p-4 space-y-2 flex-grow">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 px-2">Workspaces</p>
+            <button onclick="switchTab('campaign')" id="tab-campaign" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-primary/20 text-white transition-all tab-btn">
+                <i data-lucide="megaphone" class="w-5 h-5"></i>
+                <span class="font-medium">Marketing Campaign</span>
+            </button>
+            <button onclick="switchTab('pitch')" id="tab-pitch" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-all tab-btn">
+                <i data-lucide="presentation" class="w-5 h-5"></i>
+                <span class="font-medium">Sales Pitch</span>
+            </button>
+            <button onclick="switchTab('lead')" id="tab-lead" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-all tab-btn">
+                <i data-lucide="target" class="w-5 h-5"></i>
+                <span class="font-medium">Lead Scoring</span>
+            </button>
+        </div>
+        
+        <div class="p-4 border-t border-slate-700">
+            <button onclick="toggleSettings(true)" class="w-full flex items-center justify-between px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span>API Settings</span>
+                </div>
+                <div id="status-dot" class="w-2 h-2 rounded-full bg-red-500"></div>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <header class="bg-white shadow-sm px-8 py-4 flex justify-between items-center z-10">
+            <h2 id="page-title" class="text-2xl font-bold text-slate-800">AI-Generated Marketing Campaign</h2>
+            <button onclick="clearForm()" class="text-sm font-medium text-slate-500 hover:text-primary transition-colors flex items-center space-x-1">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                <span>Reset</span>
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-auto p-4 md:p-8">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
+                
+                <!-- Left: Form -->
+                <div class="lg:col-span-4 flex flex-col gap-6">
+                    <div id="form-campaign" class="form-section bg-white p-6 rounded-2xl shadow-sm border border-slate-100 fade-in">
+                        <form onsubmit="handleGenerate(event, 'campaign')" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Product/Service</label>
+                                <input type="text" id="camp-product" required placeholder="e.g. CloudSync Pro" class="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Target Audience</label>
+                                <input type="text" id="camp-audience" required placeholder="Retail owners" class="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Platform</label>
+                                <select id="camp-platform" class="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white">
+                                    <option value="LinkedIn">LinkedIn</option>
+                                    <option value="Instagram">Instagram</option>
+                                </select>
+                            </div>
+                            <button type="submit" id="btn-campaign" class="w-full bg-primary hover:bg-indigo-700 text-white font-medium py-3 rounded-lg flex items-center justify-center space-x-2 transition-all">
+                                <span>Generate Campaign</span>
+                                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div id="form-pitch" class="form-section bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hidden fade-in">
+                        <form onsubmit="handleGenerate(event, 'pitch')" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Product/Solution</label>
+                                <input type="text" id="pitch-solution" required placeholder="CyberDefense Platform" class="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Prospect Role</label>
+                                <input type="text" id="pitch-prospect" required placeholder="CISO" class="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none">
+                            </div>
+                            <button type="submit" id="btn-pitch" class="w-full bg-primary hover:bg-indigo-700 text-white font-medium py-3 rounded-lg flex items-center justify-center space-x-2 transition-all">
+                                <span>Draft Sales Pitch</span>
+                                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div id="form-lead" class="form-section bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hidden fade-in">
+                        <form onsubmit="handleGenerate(event, 'lead')" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Budget</label>
+                                <input type="text" id="lead-budget" required placeholder="$50,000" class="w-full px-4 py-2 rounded-lg border border-slate-300 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Timeline</label>
+                                <select id="lead-timeline" class="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white">
+                                    <option value="Immediate">Immediate</option>
+                                    <option value="1-3 Months">1-3 Months</option>
+                                </select>
+                            </div>
+                            <button type="submit" id="btn-lead" class="w-full bg-primary hover:bg-indigo-700 text-white font-medium py-3 rounded-lg flex items-center justify-center space-x-2 transition-all">
+                                <span>Calculate Lead Score</span>
+                                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div id="error-box" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-md mt-4">
+                        <div class="flex">
+                            <i data-lucide="alert-circle" class="h-5 w-5 text-red-500 flex-shrink-0"></i>
+                            <p id="error-message" class="ml-3 text-sm text-red-700"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Output -->
+                <div class="lg:col-span-8 h-full">
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 h-full flex flex-col relative">
+                        <div id="output-empty" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                            <i data-lucide="bot" class="w-16 h-16 mb-4 text-slate-300"></i>
+                            <p class="text-lg font-medium text-slate-500">Output will appear here</p>
+                        </div>
+                        <div id="output-content" class="hidden h-full flex flex-col fade-in">
+                            <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
+                                <h3 class="text-lg font-semibold text-slate-800 flex items-center">
+                                    <i data-lucide="check-circle" class="w-5 h-5 text-green-500 mr-2"></i>
+                                    AI Result
+                                </h3>
+                                <button onclick="copyToClipboard()" class="text-sm px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-md">
+                                    <span id="copy-text">Copy</span>
+                                </button>
+                            </div>
+                            <div id="result-text" class="prose max-w-none flex-1 overflow-y-auto pr-2 pb-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden fade-in">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-lg">Groq API Settings</h3>
+                <button onclick="toggleSettings(false)" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-slate-500">Your key is stored locally in your browser and is never sent to our servers.</p>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Groq API Key</label>
+                    <input type="password" id="api-key-input" placeholder="gsk_..." class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none">
+                </div>
+                <button onclick="saveApiKey()" class="w-full bg-secondary hover:bg-slate-900 text-white font-medium py-2.5 rounded-lg transition-all">Save Key</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use localStorage for persistence across refreshes
+       const GROQ_API_KEY = "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";
+        const GROQ_MODEL = 'llama-3.3-70b-versatile';
+        const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+        lucide.createIcons();
+        updateStatus();
+
+        function toggleSettings(show) {
+            const modal = document.getElementById('settings-modal');
+            const input = document.getElementById('api-key-input');
+            if(show) {
+                input.value = GROQ_API_KEY;
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function saveApiKey() {
+            const val = document.getElementById('api-key-input').value.trim();
+            if (val) {
+                GROQ_API_KEY = val;
+                localStorage.setItem('GROQ_API_KEY', val);
+                toggleSettings(false);
+                updateStatus();
+                hideError();
+            }
+        }
+
+        function updateStatus() {
+            const dot = document.getElementById('status-dot');
+            if (GROQ_API_KEY) {
+                dot.classList.remove('bg-red-500');
+                dot.classList.add('bg-green-500');
+            } else {
+                dot.classList.remove('bg-green-500');
+                dot.classList.add('bg-red-500');
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-primary/20', 'text-white');
+                btn.classList.add('text-slate-300', 'hover:bg-slate-800');
+            });
+            document.getElementById(`tab-${tabId}`).classList.add('bg-primary/20', 'text-white');
+            document.querySelectorAll('.form-section').forEach(form => form.classList.add('hidden'));
+            document.getElementById(`form-${tabId}`).classList.remove('hidden');
+            resetOutput();
+        }
+
+        async function handleGenerate(e, type) {
+            e.preventDefault();
+            
+
+            const btn = document.getElementById(`btn-${type}`);
+            const original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<div class="spinner"></div>`;
+
+            let prompt = "";
+            if (type === 'campaign') prompt = `Generate a marketing campaign for: ${document.getElementById('camp-product').value} targeting ${document.getElementById('camp-audience').value} for ${document.getElementById('camp-platform').value}.`;
+            if (type === 'pitch') prompt = `Draft a sales pitch for ${document.getElementById('pitch-solution').value} targeting a ${document.getElementById('pitch-prospect').value}.`;
+            if (type === 'lead') prompt = `Analyze lead: Budget ${document.getElementById('lead-budget').value}, Timeline ${document.getElementById('lead-timeline').value}.`;
+
+            try {
+                const response = await fetch(GROQ_API_URL, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: GROQ_MODEL,
+                        messages: [{role: 'user', content: prompt + " Use markdown."}]
+                    })
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error?.message || "Request failed");
+
+                document.getElementById('result-text').innerHTML = marked.parse(data.choices[0].message.content);
+                document.getElementById('output-empty').classList.add('hidden');
+                document.getElementById('output-content').classList.remove('hidden');
+                hideError();
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = original;
+                lucide.createIcons();
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('error-message').innerText = msg;
+            document.getElementById('error-box').classList.remove('hidden');
+        }
+
+        function hideError() { document.getElementById('error-box').classList.add('hidden'); }
+        function resetOutput() { 
+            document.getElementById('output-empty').classList.remove('hidden');
+            document.getElementById('output-content').classList.add('hidden');
+        }
+        function clearForm() { document.querySelectorAll('form').forEach(f => f.reset()); resetOutput(); }
+        function copyToClipboard() {
+            const text = document.getElementById('result-text').innerText;
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            textArea.remove();
+            document.getElementById('copy-text').innerText = 'Copied!';
+            setTimeout(() => { document.getElementById('copy-text').innerText = 'Copy'; }, 2000);
+        }
+    </script>
+</body>
+</html>
