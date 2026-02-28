@@ -18,17 +18,42 @@ class HomeScreen extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 12),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.deepPurple.shade100,
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple.shade50, Colors.deepPurple.shade100],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.deepPurple.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            Icon(icon, size: 40, color: Colors.deepPurple),
-            const SizedBox(width: 20),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Icon(icon, size: 36, color: Colors.deepPurple),
             ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple,
+                ),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Colors.deepPurple, size: 18),
           ],
         ),
       ),
@@ -39,9 +64,48 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Market AI"),
-        backgroundColor: Colors.deepPurple,
+  backgroundColor: Colors.deepPurple,
+  toolbarHeight: 80, // taller AppBar for more presence
+  title: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: const [
+      Text(
+        "Marketing Wizard",
+        style: TextStyle(
+          fontSize: 26,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Courier',
+          shadows: [
+            Shadow(
+              color: Colors.black26,
+              offset: Offset(1, 1),
+              blurRadius: 2,
+            ),
+          ],
+        ),
       ),
+      SizedBox(height: 4),
+      Text(
+        "Your AI sidekick for marketing wins",
+        style: TextStyle(
+          fontSize: 16,
+          fontStyle: FontStyle.italic,
+          fontWeight: FontWeight.w400,
+          fontFamily: 'Georgia',
+          color: Colors.white70,
+          shadows: [
+            Shadow(
+              color: Colors.black26,
+              offset: Offset(0.5, 0.5),
+              blurRadius: 1,
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
