@@ -1,95 +1,155 @@
 import 'dart:convert';
+import 'dart:html' as html;
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // ⚠️ Change this if using emulator
+  // ✅ Flutter Web → localhost
   static const String baseUrl = "http://localhost:8000";
 
-  // =====================
-  // COMMON PARSER
-  // =====================
-  static String parseResponse(http.Response response) {
-    print("STATUS: ${response.statusCode}");
-    print("BODY: ${response.body}");
+  // =============================
+  // UNIVERSAL POST REQUEST
+  // =============================
+  static Future<String> _postRequest(
+      String endpoint, Map<String, dynamic> body) async {
+    final url = Uri.parse("$baseUrl$endpoint");
 
     try {
-      final data = jsonDecode(response.body);
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode(body),
+      );
 
       if (response.statusCode == 200) {
-        if (data["status"] == "success") {
-          return data["data"] ?? "No data returned";
-        } else {
-          return "❌ ${data["detail"] ?? "Unknown error"}";
-        }
+        final data = jsonDecode(response.body);
+        return data["data"]?.toString() ??
+            data["message"]?.toString() ??
+            "✅ Success";
       } else {
-        return "❌ Server Error: ${response.statusCode}";
+        return "❌ Server Error ${response.statusCode}\n${response.body}";
       }
     } catch (e) {
-      return "❌ JSON Error: $e\nRaw: ${response.body}";
+      return "❌ Connection Error: $e";
     }
   }
 
-  // =====================
-  // CAMPAIGN
-  // =====================
+  // =============================
+  // CAMPAIGN GENERATION
+  // =============================
   static Future<String> generateCampaign(
-      String product, String audience, String platform) async {
-    try {
-      final response = await http.post(
-        Uri.parse("$baseUrl/campaign"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "product": product,
-          "audience": audience,
-          "platform": platform,
-        }),
-      );
-
-      return parseResponse(response);
-    } catch (e) {
-      return "❌ Connection Error: $e";
-    }
+      String product, String audience, String platform) {
+    return _postRequest("/campaign", {
+      "product": product,
+      "audience": audience,
+      "platform": platform,
+    });
   }
 
-  // =====================
+  // =============================
+  // DOWNLOAD CAMPAIGN PDF (WEB)
+  // =============================
+  static Future<void> downloadCampaignPdf(
+  String product,
+  String audience,
+  String platform,
+  String demandData,
+) async {
+  final url = Uri.parse("$baseUrl/campaign/pdf");
+
+  final response = await http.post(
+    url,
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode({
+      "product": product,
+      "audience": audience,
+      "platform": platform,
+      "demand_data": demandData,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    final blob = html.Blob([response.bodyBytes]);
+    final pdfUrl = html.Url.createObjectUrlFromBlob(blob);
+
+    final anchor = html.AnchorElement(href: pdfUrl)
+      ..setAttribute("download", "campaign_report.pdf")
+      ..click();
+
+    html.Url.revokeObjectUrl(pdfUrl);
+  } else {
+    throw Exception("Failed to download PDF");
+  }
+}
+static Future<String> generatePitch(
+  String product,
+  String audience,
+  String problem,
+) async {
+  final url = Uri.parse("$baseUrl/pitch");
+
+  final response = await http.post(
+    url,
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode({
+      "product": product,
+      "audience": audience,
+      "problem": problem,
+    }),
+  );
+
+  print("STATUS: ${response.statusCode}");
+  print("BODY: ${response.body}");
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+
+    return data["result"]?.toString() ??
+        data["data"]?.toString() ??
+        "No pitch generated";
+  } else {
+    throw Exception("Server Error ${response.statusCode}: ${response.body}");
+  }
+}
+  // =============================
   // LEAD SCORE
-  // =====================
-  static Future<String> generateLeadScore(
-      int budget, String urgency, String size, String req) async {
-    try {
-      final response = await http.post(
-        Uri.parse("$baseUrl/lead-score"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "budget": budget,
-          "urgency": urgency,
-          "company_size": size,
-          "requirement": req,
-        }),
-      );
+  // =============================
+  static Future<Map<String, dynamic>> compareLeads({
+  required double budgetA,
+  required double probA,
+  required double urgencyA,
+  required double budgetB,
+  required double probB,
+  required double urgencyB,
+}) async {
 
-      return parseResponse(response);
-    } catch (e) {
-      return "❌ Connection Error: $e";
-    }
+  final response = await http.post(
+    Uri.parse("$baseUrl/compare-leads"),
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode({
+      "clientA_budget": budgetA,
+      "clientA_probability": probA,
+      "clientA_urgency": urgencyA,
+      "clientB_budget": budgetB,
+      "clientB_probability": probB,
+      "clientB_urgency": urgencyB,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception("Comparison failed");
   }
+}
 
-  // =====================
+  // =============================
   // DEMAND PREDICTION
-  // =====================
-  static Future<String> predictDemand(String rawData) async {
-    try {
-      final response = await http.post(
-        Uri.parse("$baseUrl/predict-demand"), // ✅ FIXED
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "data": rawData,
-        }),
-      );
-
-      return parseResponse(response);
-    } catch (e) {
-      return "❌ Connection Error: $e";
-    }
+  // =============================
+  static Future<String> predictDemand(String rawData) {
+    return _postRequest("/predict-demand", {
+      "data": rawData,
+    });
   }
 }
